@@ -38,6 +38,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Tag(models.Model):
+    objects = models.Manager()
     name = models.CharField(max_length=255)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -49,6 +50,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
+    objects = models.Manager()
     name = models.CharField(max_length=255)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -60,6 +62,7 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+    objects = models.Manager()
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE

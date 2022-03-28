@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from core.models import Tag, Ingredient, Recipe
+from ..models import Tag, Ingredient, Recipe
 
 
 def sample_user(email='test@test.com', password='password'):
