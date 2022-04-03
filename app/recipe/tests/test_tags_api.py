@@ -3,8 +3,9 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
-from core.models import Tag
+from core.models import Tag, Recipe
 from ..serializers import TagSerializer
+from decimal import Decimal
 
 
 TAGS_URL = reverse('recipe:tag-list')
@@ -12,6 +13,16 @@ TAGS_URL = reverse('recipe:tag-list')
 
 def create_user(**params):
     return get_user_model().objects.create_user(**params)
+
+
+def sample_recipe(user, **params):
+    defaults = {
+        'title': 'Cheese and Chips',
+        'time_minutes': 10,
+        'price': Decimal('1.51')
+    }
+    defaults.update(params)
+    return Recipe.objects.create(user=user, **defaults)
 
 
 class PublicAPITagsTests(TestCase):
@@ -78,3 +89,29 @@ class PrivateAPITagsTests(TestCase):
         res = self.client.post(TAGS_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_tags_assigned_to_recipes(self):
+        tag1 = Tag.objects.create(user=self.user, name="Breakfast")
+        tag2 = Tag.objects.create(user=self.user, name="Lunch")
+        recipe = sample_recipe(user=self.user)
+        recipe.tags.add(tag1)
+
+        res = self.client.get(TAGS_URL, {'assigned_only': 1})
+
+        serializer1 = TagSerializer(tag1)
+        serializer2 = TagSerializer(tag2)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_get_tags_assigned_unique(self):
+        tag = Tag.objects.create(user=self.user, name="Breakfast")
+        Tag.objects.create(user=self.user, name="Lunch")
+        recipe1 = sample_recipe(user=self.user)
+        recipe1.tags.add(tag)
+
+        recipe2 = sample_recipe(user=self.user, title="Pancakes")
+        recipe2.tags.add(tag)
+
+        res = self.client.get(TAGS_URL, {'assigned_only': 1})
+        self.assertEqual(len(res.data), 1)
